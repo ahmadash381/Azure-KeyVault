@@ -1,0 +1,66 @@
+# ==================================================================================
+# Script Name : Validate Azure Key Vault Secret Password Complexity
+# Purpose     : Retrieve a Key Vault secret and validate password complexity using PowerShell
+# Author      : <Your Name>
+# ==================================================================================
+
+# Connect to Azure
+Connect-AzAccount
+
+# ----------------------------------------------------------------------------------
+# Select Azure Subscription
+# ----------------------------------------------------------------------------------
+$SubscriptionId = Read-Host "Enter Azure Subscription ID"
+az account set --subscription $SubscriptionId
+
+# ----------------------------------------------------------------------------------
+# Prompt for Key Vault and Secret Details
+# ----------------------------------------------------------------------------------
+$VaultName = Read-Host "Enter Key Vault name"
+$SecretName = Read-Host "Enter Secret name"
+
+# ----------------------------------------------------------------------------------
+# Retrieve Secret from Azure Key Vault
+# ----------------------------------------------------------------------------------
+$SecretValue = Get-AzKeyVaultSecret `
+    -VaultName $VaultName `
+    -Name $SecretName `
+    -AsPlainText
+
+# ----------------------------------------------------------------------------------
+# Define Password Policy Requirements
+# ----------------------------------------------------------------------------------
+$MinLength = 17 # Set the minimum length as per your requirements
+
+$PasswordLength = $SecretValue.Length
+$LengthCheck = $PasswordLength -ge $MinLength
+$HasUpper = $SecretValue -cmatch '[A-Z]'
+$HasLower = $SecretValue -cmatch '[a-z]'
+$HasDigit = $SecretValue -match '[0-9]'
+$HasSpecial = $SecretValue -match '[^a-zA-Z0-9]'
+
+# ----------------------------------------------------------------------------------
+# Create Audit-Proof Object
+# ----------------------------------------------------------------------------------
+$Proof = [PSCustomObject]@{
+    SecretName        = $SecretName
+    PasswordLength    = $PasswordLength
+    EvaluationTimeUTC = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss')
+    LengthValid       = $LengthCheck
+    HasUppercase      = $HasUpper
+    HasLowercase      = $HasLower
+    HasDigits         = $HasDigit
+    HasSpecialChars   = $HasSpecial
+    OverallCompliant  = ($LengthCheck -and $HasUpper -and $HasLower -and $HasDigit -and $HasSpecial)
+}
+
+# ----------------------------------------------------------------------------------
+# Display Results
+# ----------------------------------------------------------------------------------
+$Proof | Format-List
+
+# Optional: Export as JSON for audit evidence
+# $Proof | ConvertTo-Json
+
+# Run below to get an output in the terminal
+# [PSCustomObject]@{ SecretName=$SecretName; PasswordLength=$SecretValue.Length; EvaluationTimeUTC=(Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss'); LengthValid=$LengthCheck; HasUppercase=$HasUpper; HasLowercase=$HasLower; HasDigits=$HasDigit; HasSpecialChars=$HasSpecial; OverallCompliant=($LengthCheck -and $HasUpper -and $HasLower -and $HasDigit -and $HasSpecial) } | Format-List
