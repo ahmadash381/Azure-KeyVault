@@ -1,7 +1,6 @@
-PowerShell Script: Validate Azure Key Vault Secret Password Complexity
+PowerShell Script to Validate Azure Key Vault Secret Password Complexity
 
-Purpose
-This script:
+Purpose of this script:
 
 Authenticates to Azure.
 Prompts the user to enter an Azure Subscription ID.
